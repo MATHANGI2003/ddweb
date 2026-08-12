@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {  Code } from 'lucide-react';
+import { Code } from 'lucide-react';
 import './Navbar.css'; // Let's add specific styles here
 
 const Navbar = () => {
