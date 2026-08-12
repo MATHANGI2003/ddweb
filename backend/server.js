@@ -12,150 +12,81 @@ const Contact = require('./models/Contact');
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+/* =========================
+   MIDDLEWARE
+========================= */
 
-
-/* =====================================================
-   CORS
-===================================================== */
-
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+app.use(express.json());
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-
-      // Allow requests without an origin
-      // Example: Postman or server-to-server
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      // Allow configured frontend URLs
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.log('Blocked CORS origin:', origin);
-
-      return callback(
-        new Error('Not allowed by CORS')
-      );
-    },
-
-    methods: [
-      'GET',
-      'POST',
-      'PUT',
-      'DELETE',
-      'OPTIONS'
-    ],
-
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization'
-    ]
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type']
   })
 );
 
 
-/* =====================================================
-   BODY PARSER
-===================================================== */
+/* =========================
+   MONGODB
+========================= */
 
-app.use(express.json());
+let isConnected = false;
 
+const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
 
-/* =====================================================
-   MONGODB CONNECTION
-===================================================== */
+  if (!process.env.MONGO_URI) {
+    throw new Error('MONGO_URI is missing');
+  }
 
-if (!process.env.MONGO_URI) {
+  await mongoose.connect(process.env.MONGO_URI);
 
-  console.error(
-    'ERROR: MONGO_URI is missing in .env'
-  );
+  isConnected = true;
 
-} else {
-
-  mongoose
-    .connect(process.env.MONGO_URI)
-
-    .then(() => {
-      console.log('Connected to MongoDB');
-    })
-
-    .catch((error) => {
-      console.error(
-        'Failed to connect to MongoDB:',
-        error.message
-      );
-    });
-}
+  console.log('Connected to MongoDB');
+};
 
 
-/* =====================================================
+/* =========================
    NODEMAILER
-===================================================== */
+========================= */
 
-let transporter = null;
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
 
-if (
-  process.env.EMAIL_USER &&
-  process.env.EMAIL_PASS
-) {
-
-  transporter = nodemailer.createTransport({
-
-    service: 'gmail',
-
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-
-  });
-
-  console.log('Nodemailer configured');
-
-} else {
-
-  console.log(
-    'Email not configured.'
-  );
-
-}
-
-
-/* =====================================================
-   TEST ROUTE
-===================================================== */
-
-app.get('/', (req, res) => {
-
-  res.status(200).json({
-
-    success: true,
-
-    message:
-      'DDWebsite backend is running'
-
-  });
-
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
 
-/* =====================================================
-   CONTACT API
-===================================================== */
+/* =========================
+   HOME ROUTE
+========================= */
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'DDWebsite backend is running'
+  });
+});
+
+
+/* =========================
+   CONTACT ROUTE
+========================= */
 
 app.post('/api/contact', async (req, res) => {
-
   try {
+    await connectDB();
 
     const {
       name,
@@ -164,232 +95,149 @@ app.post('/api/contact', async (req, res) => {
       message
     } = req.body;
 
-
-    /* ---------------------------------------------
-       Validate form
-    --------------------------------------------- */
-
-    if (
-      !name ||
-      !email ||
-      !profession ||
-      !message
-    ) {
-
+    if (!name || !email || !profession || !message) {
       return res.status(400).json({
-
         success: false,
-
-        message:
-          'All fields are required.'
-
+        message: 'All fields are required.'
       });
-
     }
 
-
-    /* ---------------------------------------------
-       Save contact to MongoDB
-    --------------------------------------------- */
+    /* Save to MongoDB */
 
     const newContact = new Contact({
-
       name,
       email,
       profession,
       message
-
     });
 
     await newContact.save();
 
-    console.log(
-      'Contact saved to MongoDB'
-    );
 
+    /* Send emails */
 
-    /* ---------------------------------------------
-       Send emails
-    --------------------------------------------- */
-
-    if (transporter) {
+    if (
+      process.env.EMAIL_USER &&
+      process.env.EMAIL_PASS
+    ) {
 
       /* Email to website owner */
 
-      const mailOptionsOwner = {
-
+      await transporter.sendMail({
         from: process.env.EMAIL_USER,
-
         to: process.env.EMAIL_USER,
 
-        subject:
-          `New Client: ${name} (${profession})`,
+        subject: `New Client: ${name} (${profession})`,
 
         html: `
-          <div
-            style="
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-            "
-          >
+          <h2>New Contact Request</h2>
 
-            <h2>
-              New Contact Request
-            </h2>
+          <p><strong>Name:</strong> ${name}</p>
 
-            <p>
-              <strong>Name:</strong>
-              ${name}
-            </p>
+          <p><strong>Email:</strong> ${email}</p>
 
-            <p>
-              <strong>Email:</strong>
-              ${email}
-            </p>
+          <p><strong>Profession:</strong> ${profession}</p>
 
-            <p>
-              <strong>Profession:</strong>
-              ${profession}
-            </p>
+          <p><strong>Message:</strong></p>
 
-            <p>
-              <strong>Message:</strong>
-            </p>
-
-            <p>
-              ${message}
-            </p>
-
-          </div>
+          <p>${message}</p>
         `
-      };
+      });
 
 
       /* Auto reply to client */
 
-      const mailOptionsClient = {
-
+      await transporter.sendMail({
         from: process.env.EMAIL_USER,
-
         to: email,
 
-        subject:
-          'Thank you for contacting DDWebsite!',
+        subject: 'Thank you for contacting DDWebsite!',
 
         html: `
-          <div
-            style="
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-            "
-          >
+          <h2>Dear ${name},</h2>
 
-            <h2>
-              Dear ${name},
-            </h2>
+          <p>
+            Thank you for contacting DDWebsite.
+          </p>
 
-            <p>
-              Thank you for contacting
-              <strong>DDWebsite</strong>.
-            </p>
+          <p>
+            We have received your message regarding
+            your <strong>${profession}</strong> needs.
+          </p>
 
-            <p>
-              We have received your message
-              regarding your
-              <strong>${profession}</strong>
-              needs.
-            </p>
+          <p>
+            Our team will get back to you shortly.
+          </p>
 
-            <p>
-              Our team will review your
-              requirements and get back to
-              you shortly.
-            </p>
+          <br>
 
-            <br />
+          <p>Best Regards,</p>
 
-            <p>
-              Best Regards,
-            </p>
-
-            <p>
-              <strong>DDWebsite</strong>
-            </p>
-
-          </div>
+          <p><strong>DDWebsite</strong></p>
         `
-      };
+      });
 
-
-      /* Send email to owner */
-
-      await transporter.sendMail(
-        mailOptionsOwner
-      );
-
-
-      /* Send auto-reply */
-
-      await transporter.sendMail(
-        mailOptionsClient
-      );
-
-
-      console.log(
-        'Emails sent successfully'
-      );
-
-    } else {
-
-      console.log(
-        'Emails skipped because email credentials are not configured.'
-      );
-
+      console.log('Emails sent successfully');
     }
 
 
-    /* ---------------------------------------------
-       Success
-    --------------------------------------------- */
-
     return res.status(200).json({
-
       success: true,
-
-      message:
-        'Message received and saved successfully.'
-
+      message: 'Message received and saved successfully.'
     });
 
   } catch (error) {
 
-    console.error(
-      'Contact form error:',
-      error
-    );
+    console.error('Contact error:', error);
 
     return res.status(500).json({
-
       success: false,
-
-      message:
-        'Server Error. Please try again later.'
-
+      message: error.message
     });
-
   }
-
 });
 
 
-/* =====================================================
-   START SERVER
-===================================================== */
+/* =========================
+   ERROR HANDLER
+========================= */
 
-app.listen(PORT, () => {
+app.use((err, req, res, next) => {
+  console.error(err);
 
-  console.log(
-    `Server running on port ${PORT}`
-  );
-
+  res.status(500).json({
+    success: false,
+    message: 'Internal Server Error'
+  });
 });
+
+
+/* =========================
+   LOCALHOST ONLY
+========================= */
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(
+          `Server running on port ${PORT}`
+        );
+      });
+    })
+    .catch((error) => {
+      console.error(
+        'MongoDB connection error:',
+        error.message
+      );
+    });
+}
+
+
+/* =========================
+   EXPORT FOR VERCEL
+========================= */
+
+module.exports = app;
