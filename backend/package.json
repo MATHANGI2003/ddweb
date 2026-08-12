@@ -1,11 +1,10 @@
 {
   "name": "ddwebsite-backend",
   "version": "1.0.0",
-  "description": "DDWebsite Backend API",
+  "description": "DDWebsite Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
