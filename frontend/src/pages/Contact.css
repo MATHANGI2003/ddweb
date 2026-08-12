@@ -117,4 +117,11 @@
   .contact-container {
     grid-template-columns: 1fr;
   }
+  .contact-info, .contact-form-wrapper {
+    padding: 2rem 1rem;
+  }
+  .info-item {
+    flex-direction: column;
+    text-align: center;
+  }
 }

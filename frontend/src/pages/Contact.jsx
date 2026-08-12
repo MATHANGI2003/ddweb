@@ -37,14 +37,22 @@ const Contact = () => {
     });
 
     try {
+      /*
+        React Create React App
 
-      // Backend URL
-      // Vercel: REACT_APP_API_URL=https://ddweb-pied.vercel.app
-      // Localhost fallback: http://localhost:5000
+        Localhost backend:
+        http://localhost:5000
 
-      const API_URL =
+        Vercel backend:
+        https://ddweb-pied.vercel.app
+      */
+
+      const API_URL = (
         process.env.REACT_APP_API_URL ||
-        'http://localhost:5000';
+        'http://localhost:5000'
+      ).replace(/\/+$/, '');
+
+      console.log('Backend URL:', API_URL);
 
       const response = await fetch(
         `${API_URL}/api/contact`,
@@ -62,7 +70,6 @@ const Contact = () => {
       const data = await response.json();
 
       if (response.ok) {
-
         setStatus({
           type: 'success',
           message:
@@ -77,18 +84,15 @@ const Contact = () => {
         });
 
       } else {
-
         setStatus({
           type: 'error',
           message:
             data.message ||
             'Something went wrong. Please try again.'
         });
-
       }
 
     } catch (error) {
-
       console.error(
         'Contact form error:',
         error
@@ -101,9 +105,7 @@ const Contact = () => {
       });
 
     } finally {
-
       setIsSubmitting(false);
-
     }
   };
 

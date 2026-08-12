@@ -135,3 +135,15 @@ h1, h2, h3 {
   flex: 1;
   padding-top: 80px; /* Space for navbar */
 }
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  .glass-panel {
+    padding: 1.5rem;
+  }
+  .main-content {
+    padding-top: 130px; /* Space for taller mobile navbar */
+  }
+}

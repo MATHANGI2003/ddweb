@@ -164,5 +164,18 @@
   }
   .hero-actions {
     flex-direction: column;
+    width: 100%;
+    padding: 0 1rem;
+  }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary {
+    width: 100%;
+  }
+  .services {
+    padding: 3rem 1rem;
+  }
+  .features-grid {
+    flex-direction: column;
+    gap: 3rem;
   }
 }

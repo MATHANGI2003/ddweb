@@ -50,3 +50,18 @@
 .nav-cta {
   padding: 0.6rem 1.5rem;
 }
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .nav-links {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .navbar {
+    padding: 0.5rem 0;
+  }
+}
