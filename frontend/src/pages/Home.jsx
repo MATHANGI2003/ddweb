@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Code, Smartphone, Rocket, Shield, Zap, Layout, Coffee, Car, Scissors, GraduationCap } from 'lucide-react';
+import { Rocket, Shield, Zap, Coffee, Car, Scissors, GraduationCap } from 'lucide-react';
 import './Home.css';
 
 const Home = () => {
