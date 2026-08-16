@@ -17,9 +17,10 @@
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: var(--bg-dark);
+  background: radial-gradient(circle at top, #1a1528 0%, #0a0a0a 100%);
   color: var(--text-light);
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
 /* Glassmorphism Utilities */

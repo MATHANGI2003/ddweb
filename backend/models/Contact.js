@@ -15,6 +15,12 @@ const contactSchema = new mongoose.Schema(
       lowercase: true
     },
 
+    phone: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
     profession: {
       type: String,
       required: true,
